@@ -6,7 +6,7 @@ Gets the Guardian Quick crossword and create a printable, accessible PDF.
 
 
 1. Create a virtual environment (recommended Python 3.12)
-2. Install the packages listed in `requirements.txt`
+2. Install the packages listed in `requirements.txt` by running `pip install -r requirements.txt`
 
 ## Usage
 
