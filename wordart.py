@@ -61,14 +61,22 @@ def genHTML(wordartText, wordartStyle, wordartSize):
     return myhtml
 
 
-def generate_wordart(string, style, filename="wordart.png"):
+def generate_wordart(string, style):
     if style in [5, 11, 17, 23, 29]:
         raise ValueError("Vertical styles not allowed")
+
+    html = genHTML(string, style, 200)
+    x = Html2Image(output_path=R"Z:\My Documents\crosswords")
+    y = x.screenshot(html_str=html, save_as="test.png")
+
+    print(y)
+
+
+generate_wordart("hello", 12)
+
+    # print(x)
     
-    data = genHTML(string, style, 200)
-    hti = Html2Image()
-    hti.screenshot(html_str=data, save_as=filename)
-    img = np.array(Image.open(filename))
-    img = crop_whitespace(img)
-    Image.fromarray(img).save(filename)
-    return img.shape[0], img.shape[1]
+    # img = np.array(Image.open(x[0]))
+    # img = crop_whitespace(img)
+    # Image.fromarray(img).save(filename)
+    # return img.shape[0], img.shape[1]
