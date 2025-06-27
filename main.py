@@ -4,7 +4,7 @@ import fpdf
 import re
 import numpy as np
 from pathlib import Path
-
+import sys
 
 
 class PDF(fpdf.FPDF):
@@ -108,6 +108,15 @@ class PDF(fpdf.FPDF):
         bg = self.soup.find(class_="crossword__grid-background")
         self.draw_rect_from_tag(bg, color=0)
 
+        # Draw the clues   
+        self.draw_clues()
+
+        self.set_font_size(70)
+        self.text(0, 550, str(self.current_num))
+        self.set_font_size(14)
+        self.text(0, 570, "wordart broke :(")
+
+
         # Draw the crossword cells
         self.lookup = [None]
         for cell in self.soup.find(class_="cells").findChildren(recursive=False):
@@ -120,14 +129,7 @@ class PDF(fpdf.FPDF):
             else:
                 self.draw_rect_from_tag(cell, color=255)
         
-        # Draw the clues   
-        self.draw_clues()
-
-        self.set_font_size(70)
-        self.text(0, 550, str(self.current_num))
-        self.set_font_size(14)
-        self.text(0, 570, "wordart broke :(")
-
+        
         # Draw the breaks
         self.draw_breaks()
 
@@ -196,14 +198,19 @@ class PDF(fpdf.FPDF):
                             origin[1] + 32*intv - 5,
                             2, 10,
                             style="F")
-                
 
-with open("tracker.txt") as file:
-    from_ = int(file.read())
-
-num = int(input("Enter number of crosswords to generate: "))
-
-out_fp = Path(f"{from_}_{from_+num-1}.pdf")
+if len(sys.argv) > 1:
+    from_ = int(sys.argv[1])
+    num = int(sys.argv[2])
+    
+    out_fp = Path(f"{from_}_{from_+num-1}.pdf")
+else:
+    with open("tracker.txt") as file:
+        from_ = int(file.read())
+    
+    num = int(input("Enter number of crosswords to generate: "))
+    
+    out_fp = Path(f"{from_}_{from_+num-1}.pdf")
 
 pdf = PDF()
 for n in range(from_, from_ + num):
