@@ -1,4 +1,6 @@
 beautifulsoup4
 requests
-fpdf
+fpdf2
 numpy
+google-news-feed
+pillow

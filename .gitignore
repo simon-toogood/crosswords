@@ -1,3 +1,4 @@
 __pycache__
 .venv
 fonts/*.pkl
+*.pdf
