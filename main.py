@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 from bs4 import BeautifulSoup
 import re
 from pathlib import Path
+<<<<<<< HEAD
 import requests
 from io import BytesIO
 import fpdf
@@ -13,6 +14,9 @@ from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
 import wordart
 
+=======
+import sys
+>>>>>>> 28f388eaff76215f275b3a89409eb33d492a6425
 
 class WhiteCell:
     def __init__(self, x, y, clue_number):
@@ -130,6 +134,7 @@ class GuardianQuickCrossword(fpdf.FPDF):
         image = Image.new(mode="L", size=(nx*self.res, ny*self.res), color=0)
         draw = ImageDraw.Draw(image)
 
+<<<<<<< HEAD
         clue_map = dict()
 
         for cell in white_cells:
@@ -146,6 +151,65 @@ class GuardianQuickCrossword(fpdf.FPDF):
                 except:
                     # sometimes the guardian puts multiple clue numbers on one line. cant be bothered to parse that
                     continue
+=======
+        # Draw the clues   
+        self.draw_clues()
+
+        self.set_font_size(70)
+        self.text(0, 550, str(self.current_num))
+        self.set_font_size(14)
+        self.text(0, 570, "wordart broke :(")
+
+
+        # Draw the crossword cells
+        self.lookup = [None]
+        for cell in self.soup.find(class_="cells").findChildren(recursive=False):
+            if cell.name == "g":
+                rect = cell.find("rect")
+                text = cell.find("text")
+                self.lookup.append((int(rect['x']), int(rect['y'])))
+                self.draw_rect_from_tag(rect, color=255)
+                self.draw_text_from_tag(text)   
+            else:
+                self.draw_rect_from_tag(cell, color=255)
+        
+        
+        # Draw the breaks
+        self.draw_breaks()
+
+    def draw_breaks(self):
+        for clue in self.make_clue_string(self.across).split("\n")[:-1]:
+            x = re.findall(r"\(.*?\)", clue)
+            if len(x) == 0:
+                continue
+            else:
+                x = x[-1]
+            types = re.findall(r'(?<=\d)([^0-9]+)(?=\d)', x)
+
+            try:
+                n = int(re.findall(R"^[^:]+", clue)[0])
+            except:
+                continue
+
+            if len(x) == 0:
+                continue
+            else:
+                intervals = np.cumsum([int(b) for b in re.findall(R"\d+", x)])[:-1]
+
+            origin = self.lookup[n]
+            self.set_fill_color(0)
+            for typ, intv in zip(types, intervals):
+                if typ == ",":
+                    self.rect(origin[0] + 32*intv - 3,
+                            origin[1],
+                            5, 31,
+                            style="F")
+                elif typ == "-":
+                    self.rect(origin[0] + 32*intv - 5,
+                            origin[1] + 16,
+                            10, 2,
+                            style="F")
+>>>>>>> 28f388eaff76215f275b3a89409eb33d492a6425
                 
                 lengths, delims = a
                 cum_length = np.cumsum(lengths)
@@ -263,13 +327,35 @@ def _get_sia():
         return SentimentIntensityAnalyzer()
     
 
+<<<<<<< HEAD
+=======
+            origin = self.lookup[n]
+            self.set_fill_color(0)
+            for typ, intv in zip(types, intervals):
+                if typ == ",":
+                    self.rect(origin[0],
+                            origin[1] + 32*intv - 3,
+                            31, 5,
+                            style="F")
+                elif typ == "-":
+                    self.rect(origin[0] + 16,
+                            origin[1] + 32*intv - 5,
+                            2, 10,
+                            style="F")
+>>>>>>> 28f388eaff76215f275b3a89409eb33d492a6425
 
-with open("tracker.txt") as file:
-    from_ = int(file.read())
-
-num = int(input("Enter number of crosswords to generate: "))
-
-out_fp = Path(f"{from_}_{from_+num-1}.pdf")
+if len(sys.argv) > 1:
+    from_ = int(sys.argv[1])
+    num = int(sys.argv[2])
+    
+    out_fp = Path(f"{from_}_{from_+num-1}.pdf")
+else:
+    with open("tracker.txt") as file:
+        from_ = int(file.read())
+    
+    num = int(input("Enter number of crosswords to generate: "))
+    
+    out_fp = Path(f"{from_}_{from_+num-1}.pdf")
 
 pdf = GuardianQuickCrossword()
 for n in range(from_, from_ + num):
@@ -281,9 +367,12 @@ with open("tracker.txt", mode="w") as file:
     file.write(str(from_ + num))
 
 print(f"The PDF is at {out_fp.resolve()}")
+<<<<<<< HEAD
 
 # c = GuardianQuickCrossword(right_handed=True)
 # c.generate_new_page(15350)
 # c.generate_new_page(15351)
 # c.generate_new_page(15352)
 # c.output("test.pdf")
+=======
+>>>>>>> 28f388eaff76215f275b3a89409eb33d492a6425
