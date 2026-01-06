@@ -283,7 +283,8 @@ def parse_args():
                 "to": from_+num, 
                 "number": num, 
                 "out": Path(os.getcwd()) / "pdfs", 
-                "left_handed": False}
+                "left_handed": False,
+                "track": True}
     
     # Read command line arguments
     else:  
@@ -291,8 +292,9 @@ def parse_args():
         parser.add_argument("--from",   type=int,  help="The crossword number to start at (inclusive). Specify exactly two of --from, --to, --number")
         parser.add_argument("--to",     type=int,  help="The crossword number to end at (exclusive). Specify exactly two of --from, --to, --number")
         parser.add_argument("--number", type=int,  help="Number of crosswords to generate. Specify exactly two of --from, --to, --number")
-        parser.add_argument("--out", default=Path(os.getcwd()) / "pdfs", help="Output directory for the generated PDF")
+        parser.add_argument("--out", default=Path(os.getcwd()) / "pdfs", help="Output directory for the generated PDF (default is cwd/pdfs/)")
         parser.add_argument("--left-handed", action="store_true", default=False, help="Generate left-handed crosswords (grid on left)")
+        parser.add_argument("--track", action="store_true", default=False, help="Modify the tracker file after generation")
         args = parser.parse_args()
 
         provided = [args.from_ is not None,
@@ -321,6 +323,7 @@ def parse_args():
             "number": args.number,
             "out": Path(args.out),
             "left_handed": args.left_handed,
+            "track": args.track
         }
 
 
@@ -363,5 +366,6 @@ if __name__ == "__main__":
     print(f"The PDF is at {output_filename}")
 
     # Update tracker
-    with open("tracker.txt", "w") as file:
-        file.write(str(args["to"]))
+    if args["track"]:
+        with open("tracker.txt", "w") as file:
+            file.write(str(args["to"]))
