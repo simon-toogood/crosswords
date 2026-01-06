@@ -4,3 +4,4 @@ fpdf2
 numpy
 google-news-feed
 pillow
+pypdf

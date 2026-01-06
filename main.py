@@ -1,16 +1,23 @@
-from PIL import Image, ImageDraw, ImageFont
-from bs4 import BeautifulSoup
 import re
-from pathlib import Path
-import requests
-from io import BytesIO
-import fpdf
-import numpy as np
-import datetime as dt
+import os
+import io
+import sys
 import random
+import argparse
+import datetime as dt
+from pathlib import Path
+from functools import partial
+from multiprocessing import Pool, Manager, cpu_count
+
+import fpdf
+import pypdf
+import requests
+import numpy as np
+from bs4 import BeautifulSoup
+from PIL import Image, ImageDraw, ImageFont
 from google_news_feed import GoogleNewsFeed
 from nltk.sentiment import SentimentIntensityAnalyzer
-import nltk
+
 import wordart
 
 
@@ -91,7 +98,6 @@ class GuardianQuickCrossword(fpdf.FPDF):
         self.set_font(family="Guardian", style="", size=14)
 
     def generate_new_page(self, number):
-        print(f"Generating crossword number {number}...")
         self.add_page()
 
         # Get the crossword and parse using bs4
@@ -254,36 +260,108 @@ class GuardianQuickCrossword(fpdf.FPDF):
         # self.line(0,self.h-self.page_margin,self.w,self.h-self.page_margin, )
         # self.line(self.w/2,0,self.w/2,self.h)
 
+    def output_to_buffer(self):
+        return io.BytesIO(self.output())
+
 
 def _get_sia():
     try:
         return SentimentIntensityAnalyzer()
     except LookupError:
+        import nltk
         nltk.download("vader_lexicon")
         return SentimentIntensityAnalyzer()
     
 
-
-if len(sys.argv) > 1:
-    from_ = int(sys.argv[1])
-    num = int(sys.argv[2])
+def parse_args():
+    # Interactive mode
+    if len(sys.argv) == 1:
+        with open("tracker.txt", mode="r") as file:
+            from_ = int(file.read())
+        num = int(input("Enter number of crosswords to generate: "))
+        return {"from": from_, 
+                "to": from_+num, 
+                "number": num, 
+                "out": Path(os.getcwd()) / "pdfs", 
+                "left_handed": False}
     
-    out_fp = Path(f"{from_}_{from_+num-1}.pdf")
-else:
-    with open("tracker.txt") as file:
-        from_ = int(file.read())
-    
-    num = int(input("Enter number of crosswords to generate: "))
-    
-    out_fp = Path(f"{from_}_{from_+num-1}.pdf")
+    # Read command line arguments
+    else:  
+        parser = argparse.ArgumentParser(description="Utility for generating PDFs of the Guardian Quick crossword.")
+        parser.add_argument("--from",   type=int,  help="The crossword number to start at (inclusive). Specify exactly two of --from, --to, --number")
+        parser.add_argument("--to",     type=int,  help="The crossword number to end at (exclusive). Specify exactly two of --from, --to, --number")
+        parser.add_argument("--number", type=int,  help="Number of crosswords to generate. Specify exactly two of --from, --to, --number")
+        parser.add_argument("--out", default=Path(os.getcwd()) / "pdfs", help="Output directory for the generated PDF")
+        parser.add_argument("--left-handed", action="store_true", default=False, help="Generate left-handed crosswords (grid on left)")
+        args = parser.parse_args()
 
-pdf = GuardianQuickCrossword()
-for n in range(from_, from_ + num):
-    pdf.generate_new_page(n)
+        provided = [args.from_ is not None,
+                    args.to is not None,
+                    args.number is not None]
 
-pdf.output(out_fp)
+        if sum(provided) != 2:
+            parser.error("Exactly two of --from, --to, and --number must be provided.")
 
-with open("tracker.txt", mode="w") as file:
-    file.write(str(from_ + num))
+        if args.from_ is not None and args.to is not None:
+            args.number = args.to - args.from_ + 1
 
-print(f"The PDF is at {out_fp.resolve()}")
+        elif args.from_ is not None and args.number is not None:
+            if args.number < 1:
+                parser.error("--number must be >= 1")
+            args.to = args.from_ + args.number - 1
+
+        elif args.to is not None and args.number is not None:
+            if args.number < 1:
+                parser.error("--number must be >= 1")
+            args.from_ = args.to - args.number - (-1)
+
+        return {
+            "from": args.from_,
+            "to": args.to,
+            "number": args.number,
+            "out": Path(args.out),
+            "left_handed": args.left_handed,
+        }
+
+
+def build_single_page(number, right_handed):
+    page = GuardianQuickCrossword(right_handed=right_handed)
+    page.generate_new_page(number)
+    return number, page.output_to_buffer()  # return number so we can re-order later
+
+
+if __name__ == "__main__":
+    # Read in arguments from command line or interactively
+    args = parse_args()
+    right_handed = not args["left_handed"]
+
+    # Set up multiprocessing pool
+    manager = Manager()
+    page_buffers = manager.dict() 
+    n_processes = min(cpu_count(), args["number"])
+
+    # Build pages in parallel
+    print("Starting generation...")
+    with Pool(processes=n_processes) as pool:
+        imap = pool.imap_unordered(partial(build_single_page, right_handed=right_handed), list(range(args["from"], args["to"])))
+        completed = 0
+        for number, buffer_obj in imap:
+            page_buffers[number] = buffer_obj
+            completed += 1
+            print(f"{completed}/{args['number']} pages completed")
+
+    # Merge pages in order
+    merger = pypdf.PdfWriter()
+    for number in range(args["from"], args["to"]):
+        merger.append(page_buffers[number])
+
+    # Write final PDF to disk
+    output_filename = args["out"] / f"{args['from']}_{args['to']}.pdf"
+    with open(output_filename, "wb") as f:
+        merger.write(f)
+        merger.close()
+    print(f"The PDF is at {output_filename}")
+
+    # Update tracker
+    with open("tracker.txt", "w") as file:
+        file.write(str(args["to"]))
