@@ -10,8 +10,6 @@ Gets the Guardian Quick crossword and create a printable, accessible PDF.
 2. Install the packages listed in `requirements.txt` by running `pip install -r requirements.txt`
 3. Done!
 
-   \
-
 ## Usage
 
 The script can be run with no arguments (intended for quickly generating some new crosswords) or with a set of command line arguments for more customisation.
