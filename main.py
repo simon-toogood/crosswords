@@ -167,7 +167,7 @@ class GuardianQuickCrossword(fpdf.FPDF):
                         else:
                             draw.line((x*self.res, (y+c)*self.res, (x+1)*self.res, (y+c)*self.res), fill=0, width=lw*5)
         
-        buf = BytesIO()
+        buf = io.BytesIO()
         image.save(buf, format="PNG")
         buf.seek(0)
         if self.right_handed:

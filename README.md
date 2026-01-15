@@ -1,7 +1,6 @@
 # Guardian Crossword Generator
 
-Gets the Guardian Quick crossword and create a printable, accessible PDF.
-
+Gets the Guardian Quick crossword and create a printable, accessible PDF. Now with WordArt!
 
 ## Installation
 
@@ -9,8 +8,6 @@ Gets the Guardian Quick crossword and create a printable, accessible PDF.
 1. Create and activate a virtual environment (optional, recommended Python 3.12)
 2. Install the packages listed in `requirements.txt` by running `pip install -r requirements.txt`
 3. Done!
-
-   \
 
 ## Usage
 
@@ -42,8 +39,6 @@ The script can be run with no arguments (intended for quickly generating some ne
      --track          Modify the tracker file after generation
    ```
 2. The PDF is generated in the given location.
-
-   \
 
 ## Known Issues
 
