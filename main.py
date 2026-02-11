@@ -11,6 +11,7 @@ from multiprocessing import Pool, Manager, cpu_count
 
 import fpdf
 import pypdf
+import qrcode
 import requests
 import numpy as np
 from bs4 import BeautifulSoup
@@ -92,9 +93,9 @@ class GuardianQuickCrossword(fpdf.FPDF):
         self.news_height = 7
         self.res = 100
         self.clue_width = self.w/4 - self.page_margin/2 - self.clue_margin
-        self.imfont = ImageFont.FreeTypeFont(R"fonts\GuardianTextSans-Regular.ttf", size=self.res//3.5)
-        self.add_font(family="Guardian", style="", fname=R"fonts\GuardianTextSans-Regular.ttf")
-        self.add_font(family="Guardian", style="b", fname=R"fonts\GHGuardianHeadline-Bold.ttf")
+        self.imfont = ImageFont.FreeTypeFont(Path("fonts/GuardianTextSans-Regular.ttf"), size=self.res//3.5)
+        self.add_font(family="Guardian", style="", fname=Path("fonts/GuardianTextSans-Regular.ttf"))
+        self.add_font(family="Guardian", style="b", fname=Path("fonts/GHGuardianHeadline-Bold.ttf"))
         self.set_font(family="Guardian", style="", size=14)
 
     def generate_new_page(self, number):
@@ -131,6 +132,9 @@ class GuardianQuickCrossword(fpdf.FPDF):
 
         # Draw the news headlines
         self.draw_news(date)
+
+        # Draw the QR code
+        self.create_qrcode(f"https://www.theguardian.com/crosswords/quick/{number}")
 
     def create_crossword_image(self, white_cells, clues, nx=13, ny=13, lw=1):
         image = Image.new(mode="L", size=(nx*self.res, ny*self.res), color=0)
@@ -193,6 +197,23 @@ class GuardianQuickCrossword(fpdf.FPDF):
                    w=self.w/2-self.page_margin,
                    h=bottom-top,
                    keep_aspect_ratio=True)
+
+    def create_qrcode(self, url):
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=3,
+            border=0,
+        )
+        qr.add_data(url)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        imgbuffer = io.BytesIO()
+        img.save(imgbuffer, format="PNG")
+        
+        x = self.page_margin if self.right_handed else self.w - self.page_margin - 25
+        self.image(imgbuffer, x=x, y=self.h - self.page_margin - 30)
 
     def draw_news(self, date):
         date = date.date()
