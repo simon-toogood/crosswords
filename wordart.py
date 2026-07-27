@@ -274,7 +274,7 @@ class WordArt:
         w, h = self.img.size
 
         if isinstance(cmap, str):
-            cmap = cm.get_cmap(cmap)
+            cmap = plt.get_cmap(cmap)
 
         # Create normalized coordinate grid
         x = np.linspace(0, 1, w)

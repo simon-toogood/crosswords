@@ -372,7 +372,7 @@ if __name__ == "__main__":
         for number, buffer_obj in imap:
             page_buffers[number] = buffer_obj
             completed += 1
-            print(f"{completed}/{args['number']} pages completed")
+            print(f"{completed}2/{args['number']} pages completed")
 
     # Merge pages in order
     merger = pypdf.PdfWriter()
@@ -390,3 +390,4 @@ if __name__ == "__main__":
     if args["track"]:
         with open("tracker.txt", "w") as file:
             file.write(str(args["to"]))
+6

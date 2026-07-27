@@ -6,4 +6,5 @@ google-news-feed
 pillow
 pypdf
 qrcode[pil]
-
+nltk
+matplotlib
